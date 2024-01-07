@@ -1,0 +1,24 @@
+name: Release
+on:
+  workflow_dispatch:
+
+jobs:
+  build-a13-kernel:
+    uses: ./.github/workflows/build-kernel-a13.yml
+    secrets: inherit
+  release:
+    needs:
+      - build-a13-kernel
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Display structure of downloaded files
+        run: ls -R
+
+      - name: release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            boot-images-*/Image-*/*.img.gz
