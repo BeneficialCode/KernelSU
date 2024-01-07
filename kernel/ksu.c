@@ -60,6 +60,7 @@ int __init kernelsu_init(void)
 	pr_alert("KPROBES is disabled, KernelSU may not work, please check https://kernelsu.org/guide/how-to-integrate-for-non-gki.html");
 #endif
 
+	ktg_core_init();
 	return 0;
 }
 
@@ -67,6 +68,8 @@ void kernelsu_exit(void)
 {
 	ksu_allowlist_exit();
 
+	ktg_core_exit();
+	
 	ksu_uid_observer_exit();
 
 	destroy_workqueue(ksu_workqueue);
