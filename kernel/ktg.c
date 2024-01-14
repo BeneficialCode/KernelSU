@@ -224,7 +224,6 @@ int tcp_server_listen(void *unused) {
             }
         }
     }
-    return 0;
 }
 
 #define ARC_PATH_MAX 256
@@ -318,40 +317,32 @@ uintptr_t get_module_bss_base(pid_t pid, char *name) {
 
 phys_addr_t translate_linear_address(struct mm_struct *mm, uintptr_t va) {
     pgd_t *pgd;
-    p4d_t *p4d;
+    pud_t *pud;
     pmd_t *pmd;
     pte_t *pte;
-    pud_t *pud;
 
     phys_addr_t page_addr;
     uintptr_t page_offset;
 
     pgd = pgd_offset(mm, va);
-    if(pgd_none(*pgd) || pgd_bad(*pgd)) {
+    if (pgd_none(*pgd) || pgd_bad(*pgd))
         return 0;
-    }
-    p4d = p4d_offset(pgd, va);
-    if (p4d_none(*p4d) || p4d_bad(*p4d)) {
-    	return 0;
-    }
-	pud = pud_offset(p4d,va);
-	if(pud_none(*pud) || pud_bad(*pud)) {
+
+    pud = pud_offset(pgd, va);
+    if (pud_none(*pud) || pud_bad(*pud))
         return 0;
-    }
-	pmd = pmd_offset(pud,va);
-	if(pmd_none(*pmd)) {
+
+    pmd = pmd_offset(pud, va);
+    if (pmd_none(*pmd))
         return 0;
-    }
-	pte = pte_offset_kernel(pmd,va);
-	if(pte_none(*pte)) {
+
+    pte = pte_offset_kernel(pmd, va);
+    if (pte_none(*pte) || !pte_present(*pte))
         return 0;
-    }
-	if(!pte_present(*pte)) {
-        return 0;
-    }
-	page_addr = (phys_addr_t)(pte_pfn(*pte) << PAGE_SHIFT);
-	page_offset = va & (PAGE_SIZE-1);
-	return page_addr + page_offset;
+
+    page_addr = (phys_addr_t) (pte_pfn(*pte) << PAGE_SHIFT);
+    page_offset = va & (PAGE_SIZE - 1);
+    return page_addr + page_offset;
 }
 
 bool read_physical_address(phys_addr_t pa, void *buffer, size_t size) {
@@ -614,7 +605,7 @@ int get_jungle_health(uintptr_t object) {
 bool get_vision_elf_pos(uintptr_t object, int *x, int *y) {
     bool result = false;
     uintptr_t component = 0;
-    result = read_process_memory(GameContext.pid, object + 0x240, &component, sizeof(uintptr_t));
+    result = read_process_memory(GameContext.pid, object + 0x220, &component, sizeof(uintptr_t));
     if (!result || !component)
         return false;
 
@@ -752,6 +743,7 @@ bool get_position2(uintptr_t manager, int *x, int *z) {
         *x = pos.x;
         *z = pos.z;
     }
+
     return result;
 }
 
@@ -765,7 +757,7 @@ bool get_recall_state(uintptr_t manager) {
     if (!result || !ptr)
         return false;
 
-    result = read_process_memory(GameContext.pid, ptr + 0x1C0, &ptr, sizeof(uintptr_t));
+    result = read_process_memory(GameContext.pid, ptr + 0x1C8, &ptr, sizeof(uintptr_t));
     if (!result || !ptr)
         return false;
 
@@ -781,14 +773,14 @@ bool isHero(int obj_id) {
     if (obj_id >= 105 && obj_id <= 564) {
         if (obj_id == 143 || obj_id == 145 || obj_id == 147 ||
             obj_id == 151 || obj_id == 158 || obj_id == 160 ||
-            obj_id == 161 ||
-            obj_id == 164 || obj_id == 165 || obj_id == 172 ||
-            obj_id == 181 || obj_id == 185 || obj_id == 188 ||
-            (obj_id >= 200 && obj_id <= 311) || (obj_id >= 313 && obj_id <= 500) ||
+            obj_id == 161 || obj_id == 164 || obj_id == 165 ||
+            obj_id == 172 || obj_id == 181 || obj_id == 185 ||
+            obj_id == 188 || (obj_id >= 200 && obj_id <= 311) ||
+            (obj_id >= 313 && obj_id <= 500) ||
             obj_id == 512 || obj_id == 516 || obj_id == 519 || obj_id == 520 ||
             obj_id == 526 || obj_id == 530 || obj_id == 532 || obj_id == 535 ||
             obj_id == 539 || obj_id == 541 || obj_id == 543 || obj_id == 546 ||
-            obj_id == 547 || (obj_id >= 549 && obj_id <= 562)) {
+            obj_id == 547 || (obj_id >= 549 && obj_id < 563)) {
             return false;
         } else {
             return true;
@@ -973,7 +965,6 @@ int game_loop_callback(void *unused) {
         }
         msleep(100);
     }
-    return 0;
 }
 
 int tcp_server_start(void) {
